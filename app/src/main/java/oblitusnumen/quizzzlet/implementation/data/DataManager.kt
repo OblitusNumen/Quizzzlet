@@ -39,14 +39,14 @@ class DataManager(val context: Context) {
         return QuestionPool(File(poolsDir, fileName))
     }
 
-    fun copyPool(uri: Uri): String {
+    fun copyPool(uri: Uri): String? {// FIXME: ask pool name
         val randomUUID = UUID.randomUUID().toString()
         try {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 QuestionPool(inputStream)
             }
         } catch (e: Exception) {
-//            return null
+            return null
         }
         context.contentResolver.openInputStream(uri)?.use { inputStream ->
             FileOutputStream(File(poolsDir, randomUUID)).use { outputStream ->
