@@ -3,8 +3,6 @@ package oblitusnumen.quizzzlet.ui.model
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
@@ -12,18 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import oblitusnumen.quizzzlet.implementation.data.DataManager
 import oblitusnumen.quizzzlet.implementation.data.Question
 import oblitusnumen.quizzzlet.implementation.data.QuestionPool
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.*
-import oblitusnumen.quizzzlet.implementation.equalsStripIgnoreCase
-import oblitusnumen.quizzzlet.implementation.measureTextLine
 
 class QScreen(private val dataManager: DataManager, fileName: String) {
     private val questionPool: QuestionPool = dataManager.getQuestionPool(fileName)
@@ -138,52 +130,8 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                         }
                     }
                 }
-                question.compose(dataManager, screenEnd)
+                question.compose(dataManager, screenEnd, hasAnswered.value)
             }
-        }
-    }
-
-    @Composable
-    fun answerField(
-        label: String,
-        lock: Boolean,
-        correctOne: String,
-        typedValue: MutableState<String>,
-        modifier: Modifier = Modifier,
-        focusRequester: FocusRequester,
-        onDone: () -> Unit,
-    ) {
-        val correct = remember(lock) { typedValue.value.equalsStripIgnoreCase(correctOne) }
-        Column(modifier = modifier) {
-            OutlinedTextField(
-                value = typedValue.value,
-                onValueChange = {
-                    typedValue.value = it
-                },
-                label = { Text(label) },
-                readOnly = lock,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { onDone() }),
-                modifier = Modifier.padding(8.dp).align(Alignment.CenterHorizontally).focusRequester(focusRequester)
-            )
-            val spaceModifier = Modifier.padding(8.dp)
-                .defaultMinSize(minHeight = measureTextLine(MaterialTheme.typography.bodySmall) * 1.2f)
-            if (lock) {
-                if (correct)
-                    Text(
-                        "Correct", color = Color.Green,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = spaceModifier.align(Alignment.CenterHorizontally)
-                    )
-                else
-                    Text(
-                        "Correct: $correctOne",
-                        color = Color.Red,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = spaceModifier.align(Alignment.CenterHorizontally)
-                    )
-            } else
-                Spacer(modifier = spaceModifier)
         }
     }
 
