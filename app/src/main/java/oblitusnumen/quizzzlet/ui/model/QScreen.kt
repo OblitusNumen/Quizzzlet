@@ -79,9 +79,13 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                     )
                 Spacer(Modifier.height(8.dp))
                 HorizontalDivider()
+                Text(
+                    question.question,
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                )
             }
             item {
-//            val focusRequester = remember { FocusRequester() }
                 val nextQuestion: (() -> Unit) -> Unit = nextQuestion@{ nullifyFields ->
                     nullifyFields()
                     overallNumber.value++
@@ -105,7 +109,6 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                     }
                     isCorrect.value = false
                     question = questionQueue[0]
-                    //                focusRequester.requestFocus()
                 }
                 val focusManager = LocalFocusManager.current
                 val submit = { checkAnswer: () -> Boolean, nullifyFields: () -> Unit ->
@@ -130,7 +133,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                         }
                     }
                 }
-                question.compose(dataManager, screenEnd, hasAnswered.value)
+                question.compose(dataManager, screenEnd, submit, hasAnswered.value)
             }
         }
     }
@@ -157,6 +160,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                 TextButton(onClick = {
                     onClose()
                     config.repeatNotCorrect = repeatNotCorrect.value
+                    config.fastMode = fastMode.value
                     config.enableTextQs = enableTextQs.value
                     config.enableSelectQs = enableSelectQs.value
                     config.enableMultipleChoiceQs = enableMultipleChoiceQs.value

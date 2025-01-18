@@ -39,6 +39,7 @@ class CategoryQuestion(
     override fun compose(
         dataManager: DataManager,
         screenEnd: @Composable (checkAnswer: () -> Boolean, nullifyFields: () -> Unit) -> Unit,
+        submit: (checkAnswer: () -> Boolean, nullifyFields: () -> Unit) -> Unit,
         hasAnswered: Boolean
     ) {
         Column {
@@ -84,7 +85,7 @@ class CategoryQuestion(
                     }
                 }
             }
-            screenEnd({ checkAnswer(candidates, answers) }, { hack = !hack })// FIXME:
+            screenEnd({ checkAnswer(candidates, answers) }, { hack = !hack })
         }
     }
 

@@ -7,6 +7,7 @@ abstract class Question internal constructor(val id: Int?, val question: String,
     open fun compose(
         dataManager: DataManager,
         screenEnd: @Composable (checkAnswer: () -> Boolean, nullifyFields: () -> Unit) -> Unit,
+        submit: (checkAnswer: () -> Boolean, nullifyFields: () -> Unit) -> Unit,
         hasAnswered: Boolean
     ) {
         screenEnd({ true }, {})// FIXME:
