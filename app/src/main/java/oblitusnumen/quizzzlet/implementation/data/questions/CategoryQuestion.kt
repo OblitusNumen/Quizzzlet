@@ -1,4 +1,4 @@
-package oblitusnumen.quizzzlet.implementation.data.jsonizer
+package oblitusnumen.quizzzlet.implementation.data.questions
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -7,11 +7,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonElement
 import oblitusnumen.quizzzlet.implementation.data.DataManager
-import oblitusnumen.quizzzlet.implementation.data.Question
-import java.lang.reflect.Type
+import oblitusnumen.quizzzlet.implementation.data.jsonizer.CategoryQuestionJsonizer
+import oblitusnumen.quizzzlet.implementation.data.jsonizer.QuestionJsonizer
 
 class CategoryQuestion(
     id: Int?,
@@ -137,25 +135,5 @@ class CategoryQuestion(
             if (!checkAnswer(candidates[i], answers[i].value)) return false
         }
         return true
-    }
-
-    class CategoryQuestionJsonizer : QuestionJsonizer<CategoryQuestion>() {
-        override fun deserialize(
-            json: JsonElement,
-            type: Type?,
-            context: JsonDeserializationContext
-        ): CategoryQuestion {
-            val jsonObject = json.asJsonObject
-            return CategoryQuestion(
-                if (jsonObject.has("id")) jsonObject.get("id").asInt else null,
-                jsonObject.get("question").asString,
-                if (jsonObject.has("attachments"))
-                    jsonObject.get("attachments").asJsonArray.map { it.asString }
-                else
-                    null,
-                jsonObject.get("candidates").asJsonArray.map { it.asString },
-                jsonObject.get("categories").asJsonArray.map { it.asString },
-                jsonObject.get("answer").asJsonArray.map { it.asInt })
-        }
     }
 }

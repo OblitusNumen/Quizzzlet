@@ -13,9 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import oblitusnumen.quizzzlet.implementation.data.DataManager
-import oblitusnumen.quizzzlet.implementation.data.Question
 import oblitusnumen.quizzzlet.implementation.data.QuestionPool
-import oblitusnumen.quizzzlet.implementation.data.jsonizer.*
+import oblitusnumen.quizzzlet.implementation.data.questions.*
 
 class QScreen(private val dataManager: DataManager, fileName: String) {
     private val questionPool: QuestionPool = dataManager.getQuestionPool(fileName)

@@ -3,6 +3,7 @@ package oblitusnumen.quizzzlet.implementation.data
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.QuestionListTypeAdapter
+import oblitusnumen.quizzzlet.implementation.data.questions.Question
 import java.io.File
 import java.io.InputStream
 

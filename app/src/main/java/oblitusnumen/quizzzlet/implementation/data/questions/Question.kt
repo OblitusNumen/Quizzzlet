@@ -1,6 +1,7 @@
-package oblitusnumen.quizzzlet.implementation.data
+package oblitusnumen.quizzzlet.implementation.data.questions
 
 import androidx.compose.runtime.Composable
+import oblitusnumen.quizzzlet.implementation.data.DataManager
 
 abstract class Question internal constructor(val id: Int?, val question: String, val attachments: List<String>?) {
     @Composable

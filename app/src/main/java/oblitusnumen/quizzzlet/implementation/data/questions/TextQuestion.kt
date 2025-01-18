@@ -1,4 +1,4 @@
-package oblitusnumen.quizzzlet.implementation.data.jsonizer
+package oblitusnumen.quizzzlet.implementation.data.questions
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
@@ -14,13 +14,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonElement
 import oblitusnumen.quizzzlet.implementation.data.DataManager
-import oblitusnumen.quizzzlet.implementation.data.Question
+import oblitusnumen.quizzzlet.implementation.data.jsonizer.QuestionJsonizer
+import oblitusnumen.quizzzlet.implementation.data.jsonizer.TextQuestionJsonizer
 import oblitusnumen.quizzzlet.implementation.equalsStripIgnoreCase
 import oblitusnumen.quizzzlet.implementation.measureTextLine
-import java.lang.reflect.Type
 
 class TextQuestion(id: Int?, question: String, attachments: List<String>?, private val answer: String) : Question(
     id, question,
@@ -107,20 +105,5 @@ class TextQuestion(id: Int?, question: String, attachments: List<String>?, priva
 
     companion object {
         fun getJsonizer(): QuestionJsonizer<TextQuestion> = TextQuestionJsonizer()
-    }
-
-    class TextQuestionJsonizer : QuestionJsonizer<TextQuestion>() {
-        override fun deserialize(json: JsonElement, type: Type?, context: JsonDeserializationContext): TextQuestion {
-            val jsonObject = json.asJsonObject
-            return TextQuestion(
-                if (jsonObject.has("id")) jsonObject.get("id").asInt else null,
-                jsonObject.get("question").asString,
-                if (jsonObject.has("attachments"))
-                    jsonObject.get("attachments").asJsonArray.map { it.asString }
-                else
-                    null,
-                jsonObject.get("answer").asString/*jsonObject.get("answer").asJsonArray.map { it.asInt }*/// FIXME: this can also be an array
-            )
-        }
     }
 }

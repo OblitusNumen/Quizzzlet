@@ -3,8 +3,8 @@ package oblitusnumen.quizzzlet.implementation.data.jsonizer
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
-import oblitusnumen.quizzzlet.implementation.data.Question
 import oblitusnumen.quizzzlet.implementation.data.QuestionList
+import oblitusnumen.quizzzlet.implementation.data.questions.*
 import java.lang.reflect.Type
 
 class QuestionListTypeAdapter : JsonDeserializer<QuestionList> {
