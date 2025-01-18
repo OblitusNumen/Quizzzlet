@@ -2,7 +2,7 @@ package oblitusnumen.quizzzlet
 
 class Config private constructor(string: String) {
     var repeatNotCorrect: Boolean = true
-    var fastMode: Boolean = false
+    var fastMode: Boolean = true
     var enableSelectQs: Boolean = true
     var enableMultipleChoiceQs: Boolean = true
     var enableTextQs: Boolean = true
