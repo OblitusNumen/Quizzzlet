@@ -28,6 +28,7 @@ import oblitusnumen.quizzzlet.implementation.measureTextLine
 class QScreen(private val dataManager: DataManager, fileName: String) {
     private val questionPool: QuestionPool = dataManager.getQuestionPool(fileName)
     private val questionQueue: MutableList<Question> = questionPool.questionsScrambled().toMutableList()
+    private var empty by mutableStateOf(questionQueue.isEmpty())
 
     init {
         filterQueue()
@@ -44,6 +45,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                 else -> throw NotImplementedError()
             }
         }
+        empty = questionQueue.isEmpty()
     }
 
     @Composable
@@ -52,13 +54,13 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
         val overallNumber = remember { mutableStateOf(0) }
         val isCorrect = remember { mutableStateOf(false) }
         val hasAnswered = remember { mutableStateOf(false) }
-        if (questionQueue.isEmpty()) {
+        if (empty) {
             Box(modifier = modifier.fillMaxSize()) {
                 Text("No questions found", Modifier.align(Alignment.Center), style = MaterialTheme.typography.bodyLarge)
             }
             return
         }
-        val question = questionQueue[0]
+        var question by remember { mutableStateOf(questionQueue[0]) }
         LazyColumn(modifier = modifier) {
             item {
                 Text(
@@ -92,10 +94,11 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                     nullifyFields()
                     overallNumber.value++
                     hasAnswered.value = false
+                    filterQueue()
                     while (questionQueue.size <= 10) {
                         questionQueue.addAll(questionPool.questionsScrambled())
                         filterQueue()
-                        if (questionQueue.isEmpty())
+                        if (empty)
                             return@nextQuestion
                     }
                     if (isCorrect.value) {
@@ -108,8 +111,8 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                         } else
                             questionQueue.removeAt(0)
                     }
-                    // FIXME: move to next q
                     isCorrect.value = false
+                    question = questionQueue[0]
                     //                focusRequester.requestFocus()
                 }
                 val focusManager = LocalFocusManager.current
@@ -212,6 +215,10 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                     config.enableCategoryQs = enableCategoryQs.value
                     config.enableOrderQs = enableOrderQs.value
                     dataManager.config = config
+                    if (empty) {
+                        questionQueue.addAll(questionPool.questionsScrambled())
+                        filterQueue()
+                    }
                 }) {
                     Text("OK")
                 }
