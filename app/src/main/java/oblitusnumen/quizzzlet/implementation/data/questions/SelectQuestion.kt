@@ -39,17 +39,17 @@ class SelectQuestion(
                 val bg: Color =
                     if (hasAnswered)
                         when (option) {
-                            this@SelectQuestion.candidates[this@SelectQuestion.answer] -> Color.Green
-                            answer -> Color.Red
+                            this@SelectQuestion.candidates[this@SelectQuestion.answer] -> Color.Green.copy(alpha = 0.7f)
+                            answer -> Color.Red.copy(alpha = 0.7f)
                             else -> Color.Transparent
                         }
                     else
                         if (option == answer)
-                            Color.Gray
+                            Color.Gray.copy(alpha = 0.7f)
                         else
                             Color.Transparent
                 Row(
-                    Modifier.defaultMinSize(minHeight = 100.dp).fillMaxWidth()
+                    Modifier.defaultMinSize(minHeight = 64.dp).fillMaxWidth()
                         .padding(vertical = 4.dp, horizontal = 8.dp)
                         .clickable {
                             if (!hasAnswered) answer = option
@@ -59,8 +59,7 @@ class SelectQuestion(
                         .background(bg, shape = RoundedCornerShape(4.dp))
                 ) {
                     Text(
-                        modifier = Modifier.weight(1.0f).padding(start = 8.dp, end = 8.dp)
-                            .align(Alignment.CenterVertically),
+                        modifier = Modifier.weight(1.0f).padding(8.dp).align(Alignment.CenterVertically),
                         text = option,
                         style = MaterialTheme.typography.bodyLarge
                     )
