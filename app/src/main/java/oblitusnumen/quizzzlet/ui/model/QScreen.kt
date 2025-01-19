@@ -80,8 +80,8 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                 HorizontalDivider()
                 Text(
                     question.question,
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(12.dp)
                 )
             }
             item {
