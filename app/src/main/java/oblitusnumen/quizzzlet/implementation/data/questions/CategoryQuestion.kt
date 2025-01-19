@@ -51,9 +51,9 @@ class CategoryQuestion(
                 return@remember l
             }
             repeat(candidates.size) {
-                Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                     Row(
-                        Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp).padding(8.dp),
+                        Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp).padding(bottom = 4.dp),
                         horizontalArrangement = Arrangement.Start
                     ) {
                         Text(
@@ -97,7 +97,7 @@ class CategoryQuestion(
         ) {
             OutlinedTextField(
                 value = if (selectedOption.value != null) categories[selectedOption.value!!] else "",
-                modifier = Modifier.fillMaxHeight().menuAnchor(),
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
                 onValueChange = {},
                 readOnly = true,
                 trailingIcon = { if (!lock) ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
