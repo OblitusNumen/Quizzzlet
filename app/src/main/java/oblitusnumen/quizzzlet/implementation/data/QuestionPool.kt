@@ -1,5 +1,7 @@
 package oblitusnumen.quizzzlet.implementation.data
 
+import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.QuestionListTypeAdapter
@@ -8,22 +10,32 @@ import java.io.File
 import java.io.InputStream
 
 class QuestionPool {
-    private var file: File? = null
-    val filename: String
+    val poolDir: String
     val name: String
+        get() = dataManager.getPoolName(poolDir)
     private val questions: List<Question>
+    private val dataManager: DataManager
 
-    constructor(file: File) : this(file.readText(), file.name) {
-        this.file = file
-    }
+    constructor(dataManager: DataManager, file: File) : this(
+        dataManager,
+        dataManager.getPoolFile(file.name).readText(),
+        file.name
+    )
 
-    constructor(inputStream: InputStream) : this(inputStream.bufferedReader().use { it.readText() }, "")
+    constructor(dataManager: DataManager, inputStream: InputStream) : this(
+        dataManager,
+        inputStream.bufferedReader().use { it.readText() },
+        ""
+    )
 
-    private constructor(source: String, filename: String) {
-        this.filename = filename
-        name = "placeholder"// TODO: choose a name for it
+    private constructor(dataManager: DataManager, source: String, filename: String) {
+        this.dataManager = dataManager
+        this.poolDir = filename
         this.questions = gson.fromJson(source, QuestionList::class.java).questions
     }
+
+    fun getAttachment(path: String) =
+        BitmapFactory.decodeFile(File(dataManager.getPoolDir(poolDir), path).absolutePath).asImageBitmap()
 
     fun countQs(): Int {
         return questions.size
@@ -32,7 +44,7 @@ class QuestionPool {
     fun questionsScrambled(): List<Question> = questions.shuffled()
 
     fun delete() {
-        file?.delete()
+        dataManager.getPoolDir(poolDir).deleteRecursively()
     }
 
     companion object {

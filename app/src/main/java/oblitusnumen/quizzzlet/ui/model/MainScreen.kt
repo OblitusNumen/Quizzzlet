@@ -32,7 +32,7 @@ class MainScreen(private val dataManager: DataManager) {
     fun compose(modifier: Modifier = Modifier, openPool: (String) -> Unit) {
         LazyColumn(modifier = modifier) {
             items(questionPools) {
-                drawQuestionPool(it) { openPool(it.filename) }
+                drawQuestionPool(it) { openPool(it.poolDir) }
             }
             item {
                 Button(
@@ -115,20 +115,55 @@ class MainScreen(private val dataManager: DataManager) {
 
     @Composable
     fun functionButton() {
+        var uri: Uri? by remember { mutableStateOf(null) }
         val filePickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
         ) {
-            if (it != null) {
-                val fileName = dataManager.copyPool(it)
-                if (fileName != null)
-                    questionPools += dataManager.getQuestionPool(fileName)
-                else
-                    Toast.makeText(dataManager.context, "File is invalid", Toast.LENGTH_SHORT).show()
-            }
+            uri = it
         }
         FloatingActionButton(onClick = { filePickerLauncher.launch("*/*") }) {
             Icon(Icons.Filled.Add, "Add a question pool")
         }
+        if (uri != null) {
+            showGetNameDialog { name ->
+                if (name != null) {
+                    val fileName = dataManager.copyPool(uri!!, name)
+                    if (fileName != null)
+                        questionPools = questionPools + dataManager.getQuestionPool(fileName)
+                    else
+                        Toast.makeText(dataManager.context, "File is invalid", Toast.LENGTH_SHORT).show()
+                }
+                uri = null
+            }
+        }
+    }
+
+    @Composable
+    fun showGetNameDialog(onChooseName: (String?) -> Unit) {
+        var name by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { onChooseName(null) },
+            dismissButton = {
+                TextButton(onClick = { onChooseName(null) }) {
+                    Text("Cancel")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onChooseName(name) }) {
+                    Text("OK")
+                }
+            },
+            text = {
+                Column(Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = name,
+                        label = { Text("Question pool name") },
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        onValueChange = { name = it }
+                    )
+                }
+            }
+        )
     }
 
     @OptIn(ExperimentalMaterial3Api::class)

@@ -1,5 +1,6 @@
 package oblitusnumen.quizzzlet.ui.model
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import oblitusnumen.quizzzlet.implementation.data.DataManager
@@ -17,6 +19,7 @@ import oblitusnumen.quizzzlet.implementation.data.QuestionPool
 import oblitusnumen.quizzzlet.implementation.data.questions.*
 
 class QScreen(private val dataManager: DataManager, fileName: String) {
+    // TODO: submit button in bottom bar
     private val questionPool: QuestionPool = dataManager.getQuestionPool(fileName)
     private val questionQueue: MutableList<Question> = questionPool.questionsScrambled().toMutableList()
     private var empty by mutableStateOf(questionQueue.isEmpty())
@@ -54,6 +57,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
         var question by remember { mutableStateOf(questionQueue[0]) }
         LazyColumn(modifier = modifier) {
             item {
+                Spacer(Modifier.height(16.dp))
                 Text(
                     "Answered: ${overallNumber.value}",
                     style = MaterialTheme.typography.bodyLarge,
@@ -83,6 +87,14 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(12.dp)
                 )
+                for (attachment in question.attachments ?: emptyList()) {
+                    Image(
+                        questionPool.getAttachment(attachment),
+                        "attachment $attachment",
+                        modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                        contentScale = ContentScale.FillWidth
+                    )
+                }
             }
             item {
                 val nextQuestion: (() -> Unit) -> Unit = nextQuestion@{ nullifyFields ->
