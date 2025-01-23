@@ -37,7 +37,8 @@ class MainActivity : ComponentActivity() {
                     floatingActionButton = {
                         if (qScreen == null)
                             mainScreen.functionButton()
-                    }) { innerPadding ->
+                    },
+                    bottomBar = { qScreen?.bottomBar() }) { innerPadding ->
                     if (qScreen == null)
                         mainScreen.compose(Modifier.padding(innerPadding)) { qScreen = QScreen(dataManager, it) }
                     else {

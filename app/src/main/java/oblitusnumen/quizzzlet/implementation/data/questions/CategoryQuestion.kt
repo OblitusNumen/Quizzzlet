@@ -1,6 +1,7 @@
 package oblitusnumen.quizzzlet.implementation.data.questions
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,12 +11,14 @@ import androidx.compose.ui.unit.dp
 import oblitusnumen.quizzzlet.implementation.data.DataManager
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.CategoryQuestionJsonizer
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.QuestionJsonizer
+import oblitusnumen.quizzzlet.ui.model.question.CategoryQuestionState
+import oblitusnumen.quizzzlet.ui.model.question.QuestionState
 
 class CategoryQuestion(
     id: Int?,
     question: String,
     attachments: List<String>?,
-    private val candidates: List<String>,
+    val candidates: List<String>,
     private val categories: List<String>,
     private val answer: List<Int>
 ) : Question(id, question, attachments) {
@@ -29,61 +32,47 @@ class CategoryQuestion(
         correctAnswers = a
     }
 
-    companion object {
-        fun getJsonizer(): QuestionJsonizer<CategoryQuestion> = CategoryQuestionJsonizer()
-    }
-
-    @Composable
     override fun compose(
         dataManager: DataManager,
-        screenEnd: @Composable (checkAnswer: () -> Boolean, nullifyFields: () -> Unit) -> Unit,
-        submit: (checkAnswer: () -> Boolean, nullifyFields: () -> Unit) -> Unit,
+        scope: LazyListScope,
+        questionState: QuestionState,
+        submit: () -> Unit,
         hasAnswered: Boolean
     ) {
-        Column {
-            var hack by remember { mutableStateOf(false) }// FIXME: yet another filthy hack
-            val candidates = remember(hack) { candidates.shuffled() }
-            val answers: List<MutableState<Int?>> = remember(hack) {
-                val l: MutableList<MutableState<Int?>> = mutableListOf()
-                repeat(candidates.size) {
-                    l.add(mutableStateOf(null))
+        val candidates = (questionState as CategoryQuestionState).candidates
+        val answers: List<MutableState<Int?>> = questionState.answers
+        scope.items(candidates.size) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Row(
+                    Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp).padding(bottom = 4.dp),
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    Text(
+                        candidates[it],
+                        modifier = Modifier.padding(8.dp).weight(.5f).align(Alignment.CenterVertically)
+                    )
+                    answerSpinner(
+                        answers[it],
+                        Modifier.padding(8.dp).weight(.5f).align(Alignment.CenterVertically),
+                        hasAnswered
+                    )
                 }
-                return@remember l
-            }
-            repeat(candidates.size) {
-                Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp).padding(bottom = 4.dp),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
+                if (hasAnswered) {
+                    if (checkAnswer(candidates[it], answers[it].value))
                         Text(
-                            candidates[it],
-                            modifier = Modifier.padding(8.dp).weight(.5f).align(Alignment.CenterVertically)
+                            "Correct", color = Color.Green,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
-                        answerSpinner(
-                            answers[it],
-                            Modifier.padding(8.dp).weight(.5f).align(Alignment.CenterVertically),
-                            hasAnswered
+                    else
+                        Text(
+                            "Correct: ${categories[correctAnswers[candidates[it]]!!]}",
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
-                    }
-                    if (hasAnswered) {
-                        if (checkAnswer(candidates[it], answers[it].value))
-                            Text(
-                                "Correct", color = Color.Green,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                        else
-                            Text(
-                                "Correct: ${categories[correctAnswers[candidates[it]]!!]}",
-                                color = Color.Red,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                    }
                 }
             }
-            screenEnd({ checkAnswer(candidates, answers) }, { hack = !hack })
         }
     }
 
@@ -130,10 +119,16 @@ class CategoryQuestion(
     private fun checkAnswer(candidate: String, answer: Int?): Boolean =
         answer == null && correctAnswers[candidate] == -1 || answer == correctAnswers[candidate]
 
-    private fun checkAnswer(candidates: List<String>, answers: List<MutableState<Int?>>): Boolean {
+    fun checkAnswer(candidates: List<String>, answers: List<MutableState<Int?>>): Boolean {
         repeat(answers.size) { i ->
             if (!checkAnswer(candidates[i], answers[i].value)) return false
         }
         return true
+    }
+
+    override fun newQuestionState(): QuestionState = CategoryQuestionState(this)
+
+    companion object {
+        fun getJsonizer(): QuestionJsonizer<CategoryQuestion> = CategoryQuestionJsonizer()
     }
 }

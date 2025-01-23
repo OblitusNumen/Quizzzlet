@@ -1,5 +1,6 @@
 package oblitusnumen.quizzzlet.ui.model
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
     private val questionPool: QuestionPool = dataManager.getQuestionPool(fileName)
     private val questionQueue: MutableList<Question> = questionPool.questionsScrambled().toMutableList()
     private var empty by mutableStateOf(questionQueue.isEmpty())
+    private var bottomButton: @Composable (() -> Unit)? by mutableStateOf(null)
 
     init {
         filterQueue()
@@ -47,15 +49,69 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
     fun compose(modifier: Modifier = Modifier) {
         val correctNumber = remember { mutableStateOf(0) }
         val overallNumber = remember { mutableStateOf(0) }
-        val isCorrect = remember { mutableStateOf(false) }
-        val hasAnswered = remember { mutableStateOf(false) }
         if (empty) {
+            remember { bottomButton = null }
             Box(modifier = modifier.fillMaxSize()) {
                 Text("No questions found", Modifier.align(Alignment.Center), style = MaterialTheme.typography.bodyLarge)
             }
             return
         }
-        var question by remember { mutableStateOf(questionQueue[0]) }
+        var hack by remember { mutableStateOf(false) }// FIXME: yet another filthy hack
+        val isCorrect = remember(hack) { mutableStateOf(false) }
+        val hasAnswered = remember(hack) { mutableStateOf(false) }
+        val question by remember(hack) { mutableStateOf(questionQueue[0]) }
+        val questionState = remember(hack) { question.newQuestionState() }
+        val attachments = remember(hack) { question.attachments ?: emptyList() }
+        val nextQuestion = remember(hack) {
+            nextQuestion@{
+                overallNumber.value++
+                filterQueue()
+                while (questionQueue.size <= 10) {
+                    questionQueue.addAll(questionPool.questionsScrambled())
+                    filterQueue()
+                    if (empty)
+                        return@nextQuestion
+                }
+                if (isCorrect.value) {
+                    questionQueue.removeAt(0)
+                    correctNumber.value++
+                } else {
+                    if (dataManager.config.repeatNotCorrect) {
+                        if (questionQueue[4] != question) questionQueue.add(4, question)
+                        if (questionQueue[10] != question) questionQueue.add(10, question)
+                    } else
+                        questionQueue.removeAt(0)
+                }
+                hack = !hack
+            }
+        }
+        val focusManager = LocalFocusManager.current
+        val submit = remember(hack) {
+            {
+                focusManager.clearFocus()
+                isCorrect.value = questionState.checkAnswer()
+                hasAnswered.value = true
+                if (dataManager.config.fastMode && isCorrect.value)
+                    nextQuestion()
+            }
+        }
+        remember(hack) {
+            Log.e("aaaaaaaaaaaaaaaaaa", "button set")
+            bottomButton = {
+                Box(Modifier.padding(12.dp).padding(bottom = 24.dp).fillMaxWidth().defaultMinSize(minHeight = 48.dp)) {
+                    val buttonModifier = Modifier.fillMaxWidth().align(Alignment.Center)
+                    if (!hasAnswered.value) {
+                        Button(onClick = { submit() }, modifier = buttonModifier) {
+                            Text("Submit")
+                        }
+                    } else {
+                        Button(onClick = { nextQuestion() }, modifier = buttonModifier) {
+                            Text("Next")
+                        }
+                    }
+                }
+            }
+        }
         LazyColumn(modifier = modifier) {
             item {
                 Spacer(Modifier.height(16.dp))
@@ -88,74 +144,26 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(12.dp)
                 )
-                for (attachment in question.attachments ?: emptyList()) {
-                    val bitmap = questionPool.getAttachment(attachment)
-                    if (bitmap == null)
-                        Box(
-                            Modifier.padding(12.dp).fillMaxWidth().defaultMinSize(minHeight = 48.dp)
-                                .border(2.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .5f))
-                        ) {
-                            Text("attachment $attachment", Modifier.align(Alignment.Center))
-                        }
-                    else
-                        Image(
-                            bitmap,
-                            "attachment $attachment",
-                            modifier = Modifier.padding(12.dp).fillMaxWidth(),// TODO: clickable
-                            contentScale = ContentScale.FillWidth
-                        )
-                }
             }
-            item {
-                val nextQuestion: (() -> Unit) -> Unit = nextQuestion@{ nullifyFields ->
-                    nullifyFields()
-                    overallNumber.value++
-                    hasAnswered.value = false
-                    filterQueue()
-                    while (questionQueue.size <= 10) {
-                        questionQueue.addAll(questionPool.questionsScrambled())
-                        filterQueue()
-                        if (empty)
-                            return@nextQuestion
+            items(attachments.size) { index ->
+                val attachment = attachments[index]
+                val bitmap = questionPool.getAttachment(attachment)
+                if (bitmap == null)
+                    Box(
+                        Modifier.padding(12.dp).fillMaxWidth().defaultMinSize(minHeight = 48.dp)
+                            .border(2.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .5f))
+                    ) {
+                        Text("attachment $attachment", Modifier.align(Alignment.Center))
                     }
-                    if (isCorrect.value) {
-                        questionQueue.removeAt(0)
-                        correctNumber.value++
-                    } else {
-                        if (dataManager.config.repeatNotCorrect) {
-                            if (questionQueue[4] != question) questionQueue.add(4, question)
-                            if (questionQueue[10] != question) questionQueue.add(10, question)
-                        } else
-                            questionQueue.removeAt(0)
-                    }
-                    isCorrect.value = false
-                    question = questionQueue[0]
-                }
-                val focusManager = LocalFocusManager.current
-                val submit = { checkAnswer: () -> Boolean, nullifyFields: () -> Unit ->
-                    focusManager.clearFocus()
-                    isCorrect.value = checkAnswer()
-                    hasAnswered.value = true
-                    if (dataManager.config.fastMode && isCorrect.value)
-                        nextQuestion(nullifyFields)
-                }
-                val screenEnd = @Composable { checkAnswer: () -> Boolean, nullifyFields: () -> Unit ->
-                    Column {
-                        Spacer(Modifier.weight(1f))
-                        val buttonModifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp).fillMaxWidth()
-                        if (!hasAnswered.value) {
-                            Button(onClick = { submit(checkAnswer, nullifyFields) }, modifier = buttonModifier) {
-                                Text("Submit")
-                            }
-                        } else {
-                            Button(onClick = { nextQuestion(nullifyFields) }, modifier = buttonModifier) {
-                                Text("Next")
-                            }
-                        }
-                    }
-                }
-                question.compose(dataManager, screenEnd, submit, hasAnswered.value)
+                else
+                    Image(
+                        bitmap,
+                        "attachment $attachment",
+                        modifier = Modifier.padding(12.dp).fillMaxWidth(),// TODO: clickable
+                        contentScale = ContentScale.FillWidth
+                    )
             }
+            question.compose(dataManager, this, questionState, submit, hasAnswered.value)
         }
     }
 
@@ -260,5 +268,10 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
         )
         if (settingsDialogShown)
             showSettingsDialog { settingsDialogShown = false }
+    }
+
+    @Composable
+    fun bottomBar() {
+        bottomButton?.let { it() }
     }
 }

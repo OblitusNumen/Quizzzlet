@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -18,58 +19,65 @@ import androidx.compose.ui.window.Dialog
 import oblitusnumen.quizzzlet.implementation.data.DataManager
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.OrderQuestionJsonizer
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.QuestionJsonizer
+import oblitusnumen.quizzzlet.ui.model.question.OrderQuestionState
+import oblitusnumen.quizzzlet.ui.model.question.QuestionState
 
 class OrderQuestion(id: Int?, question: String, attachments: List<String>?, val answer: List<String>) :
     Question(id, question, attachments) {
-    companion object {
-        fun getJsonizer(): QuestionJsonizer<OrderQuestion> = OrderQuestionJsonizer()
-    }
-
-    @Composable
     override fun compose(
         dataManager: DataManager,
-        screenEnd: @Composable (checkAnswer: () -> Boolean, nullifyFields: () -> Unit) -> Unit,
-        submit: (checkAnswer: () -> Boolean, nullifyFields: () -> Unit) -> Unit,
+        scope: LazyListScope,
+        questionState: QuestionState,
+        submit: () -> Unit,
         hasAnswered: Boolean
     ) {
-        var hack by remember { mutableStateOf(false) }// FIXME: yet another filthy hack
-        val candidates = remember(hack) { answer.shuffled() }
-        var order: List<String> by remember(hack) { mutableStateOf(listOf()) }
-        Column {
+        val candidates = (questionState as OrderQuestionState).candidates
+        scope.item {
             HorizontalDivider(Modifier.height(8.dp))
-            repeat(order.size) { i ->
-                val bg: Color =
-                    if (hasAnswered)
-                        if (order[i] == answer[i])
-                            Color.Green.copy(alpha = 0.7f)
-                        else
-                            Color.Red.copy(alpha = 0.7f)
+        }
+        scope.items(questionState.order.size) { i ->
+            val bg: Color =
+                if (hasAnswered)
+                    if (questionState.order[i] == answer[i])
+                        Color.Green.copy(alpha = 0.7f)
                     else
-                        Color.Transparent
-                if (!hasAnswered)
-                    addButton(candidates, order, Modifier.align(Alignment.CenterHorizontally)) { e: String ->
-                        order = order.subList(0, i) + e + order.subList(i, order.size)
-                    }
-                Row(
-                    Modifier.defaultMinSize(minHeight = 64.dp).fillMaxWidth()
-                        .padding(vertical = 4.dp, horizontal = 8.dp)
-                        .clickable { if (!hasAnswered) order -= order[i] }
-                        .border(2.dp, Color.Gray, shape = RoundedCornerShape(4.dp))
-                        .background(bg, shape = RoundedCornerShape(4.dp))
-                ) {
-                    Text(
-                        modifier = Modifier.weight(1.0f).padding(8.dp).align(Alignment.CenterVertically),
-                        text = order[i],
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                        Color.Red.copy(alpha = 0.7f)
+                else
+                    Color.Transparent
+            if (!hasAnswered)
+                addButton(
+                    candidates,
+                    questionState.order,
+                    Modifier/*.align(Alignment.CenterHorizontally)*/
+                ) { e: String ->
+                    questionState.order =
+                        questionState.order.subList(0, i) + e + questionState.order.subList(i, questionState.order.size)
                 }
+            Row(
+                Modifier.defaultMinSize(minHeight = 64.dp).fillMaxWidth()
+                    .padding(vertical = 4.dp, horizontal = 8.dp)
+                    .clickable { if (!hasAnswered) questionState.order -= questionState.order[i] }
+                    .border(2.dp, Color.Gray, shape = RoundedCornerShape(4.dp))
+                    .background(bg, shape = RoundedCornerShape(4.dp))
+            ) {
+                Text(
+                    modifier = Modifier.weight(1.0f).padding(8.dp).align(Alignment.CenterVertically),
+                    text = questionState.order[i],
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
-            if (!hasAnswered && order.size != candidates.size)
-                addButton(candidates, order, Modifier.fillMaxWidth().align(Alignment.CenterHorizontally)) { e: String ->
-                    order += e
+        }
+        scope.item {
+            if (!hasAnswered && questionState.order.size != candidates.size)
+                addButton(
+                    candidates,
+                    questionState.order,
+                    Modifier.fillMaxWidth()/*.align(Alignment.CenterHorizontally)*/
+                ) { e: String ->
+                    questionState.order += e
                 }
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            if (hasAnswered && !checkAnswer(order)) {
+            if (hasAnswered && !checkAnswer(questionState.order)) {
                 var dialogShown by remember { mutableStateOf(false) }
                 Box(
                     Modifier.defaultMinSize(minHeight = 64.dp).fillMaxWidth()
@@ -84,7 +92,6 @@ class OrderQuestion(id: Int?, question: String, attachments: List<String>?, val 
                     showDialog(answer) { dialogShown = false }
             }
         }
-        screenEnd({ checkAnswer(order) }, { hack = !hack })// FIXME: buttons to add after
     }
 
     @Composable
@@ -131,11 +138,17 @@ class OrderQuestion(id: Int?, question: String, attachments: List<String>?, val 
         }
     }
 
-    private fun checkAnswer(order: List<String>): Boolean {
+    fun checkAnswer(order: List<String>): Boolean {
         if (order.size != answer.size) return false
         repeat(order.size) { i ->
             if (order[i] != answer[i]) return false
         }
         return true
+    }
+
+    override fun newQuestionState(): QuestionState = OrderQuestionState(this)
+
+    companion object {
+        fun getJsonizer(): QuestionJsonizer<OrderQuestion> = OrderQuestionJsonizer()
     }
 }
