@@ -21,7 +21,6 @@ import oblitusnumen.quizzzlet.implementation.data.QuestionPool
 import oblitusnumen.quizzzlet.implementation.data.questions.*
 
 class QScreen(private val dataManager: DataManager, fileName: String) {
-    // TODO: submit button in bottom bar
     private val questionPool: QuestionPool = dataManager.getQuestionPool(fileName)
     private val questionQueue: MutableList<Question> = questionPool.questionsScrambled().toMutableList()
     private var empty by mutableStateOf(questionQueue.isEmpty())
@@ -159,7 +158,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                     Image(
                         bitmap,
                         "attachment $attachment",
-                        modifier = Modifier.padding(12.dp).fillMaxWidth(),// TODO: clickable
+                        modifier = Modifier.padding(12.dp).fillMaxWidth(),// TODO: clickable open in fullscreen
                         contentScale = ContentScale.FillWidth
                     )
             }
