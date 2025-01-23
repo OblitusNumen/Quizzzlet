@@ -1,6 +1,7 @@
 package oblitusnumen.quizzzlet.ui.model
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -88,12 +89,21 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                     modifier = Modifier.padding(12.dp)
                 )
                 for (attachment in question.attachments ?: emptyList()) {
-                    Image(
-                        questionPool.getAttachment(attachment),
-                        "attachment $attachment",
-                        modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                        contentScale = ContentScale.FillWidth
-                    )
+                    val bitmap = questionPool.getAttachment(attachment)
+                    if (bitmap == null)
+                        Box(
+                            Modifier.padding(12.dp).fillMaxWidth().defaultMinSize(minHeight = 48.dp)
+                                .border(2.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .5f))
+                        ) {
+                            Text("attachment $attachment", Modifier.align(Alignment.Center))
+                        }
+                    else
+                        Image(
+                            bitmap,
+                            "attachment $attachment",
+                            modifier = Modifier.padding(12.dp).fillMaxWidth(),// TODO: clickable
+                            contentScale = ContentScale.FillWidth
+                        )
                 }
             }
             item {

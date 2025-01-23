@@ -1,6 +1,7 @@
 package oblitusnumen.quizzzlet.implementation.data
 
 import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -34,8 +35,14 @@ class QuestionPool {
         this.questions = gson.fromJson(source, QuestionList::class.java).questions
     }
 
-    fun getAttachment(path: String) =
-        BitmapFactory.decodeFile(File(dataManager.getPoolDir(poolDir), path).absolutePath).asImageBitmap()
+    fun getAttachment(path: String): ImageBitmap? {
+        val attachmentFile = File(dataManager.getPoolDir(poolDir), path)
+        if (!attachmentFile.exists())
+            return null
+        val asImageBitmap =
+            BitmapFactory.decodeFile(attachmentFile.absolutePath).asImageBitmap()
+        return asImageBitmap
+    }
 
     fun countQs(): Int {
         return questions.size
