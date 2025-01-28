@@ -73,7 +73,7 @@ class OrderQuestion(id: Int?, question: String, attachments: List<String>?, val 
                     )
                 }
                 if (dialogShown)
-                    showDialog(answer) { dialogShown = false }
+                    showDialog(answer, questionState) { dialogShown = false }
             }
         }
     }
@@ -99,7 +99,17 @@ class OrderQuestion(id: Int?, question: String, attachments: List<String>?, val 
         val zIndex = if (isDragged) 1.0f else 0.0f
         val scale = if (isDragged) 1.03f else 1.0f
         val elevation = if (isDragged) 8.dp else 0.dp
-        val bg: Color = if (isDragged) Color.Gray else Color.Transparent
+        val bg: Color =
+            if (hasAnswered)
+                if (element == answer[elementIndex])
+                    Color.Green.copy(alpha = 0.7f)
+                else
+                    Color.Red.copy(alpha = 0.7f)
+            else
+                if (isDragged)
+                    Color.Gray
+                else
+                    Color.Transparent
         val verticalPadding = 4.dp
         val paddingInPixels: Int
         val absoluteYLocation = mutableStateOf(0f)
@@ -137,7 +147,7 @@ class OrderQuestion(id: Int?, question: String, attachments: List<String>?, val 
     }
 
     @Composable
-    fun showDialog(remainingOptions: List<String>, onChoose: (String?) -> Unit) {
+    fun showDialog(answer: List<String>, questionState: OrderQuestionState, onChoose: (String?) -> Unit) {
         Dialog(onDismissRequest = { onChoose(null) }) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
@@ -148,15 +158,21 @@ class OrderQuestion(id: Int?, question: String, attachments: List<String>?, val 
                     modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    repeat(remainingOptions.size) { i ->
+                    repeat(answer.size) { i ->
                         item {
                             if (i != 0) HorizontalDivider(Modifier.padding(8.dp))
                             Text(
-                                remainingOptions[i],
+                                answer[i],
                                 style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.fillMaxWidth().defaultMinSize(48.dp).padding(4.dp).clickable {
-                                    onChoose(remainingOptions[i])
-                                })
+                                modifier = Modifier.fillMaxWidth().defaultMinSize(48.dp).padding(4.dp)
+                                    .clickable { onChoose(answer[i]) }.background(
+                                        if (questionState.order[i] == answer[i])
+                                            Color.Green.copy(alpha = 0.7f)
+                                        else
+                                            Color.Red.copy(alpha = 0.7f),
+                                        RoundedCornerShape(4.dp)
+                                    )
+                            )
                         }
                     }
                 }
