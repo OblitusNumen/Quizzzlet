@@ -1,11 +1,11 @@
 package oblitusnumen.quizzzlet.ui.model
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
@@ -14,7 +14,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import oblitusnumen.quizzzlet.implementation.data.DataManager
 import oblitusnumen.quizzzlet.implementation.data.QuestionPool
@@ -24,7 +26,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
     private val questionPool: QuestionPool = dataManager.getQuestionPool(fileName)
     private val questionQueue: MutableList<Question> = questionPool.questionsScrambled().toMutableList()
     private var empty by mutableStateOf(questionQueue.isEmpty())
-    private var bottomButton: @Composable (() -> Unit)? by mutableStateOf(null)
+    private var bottomButton: @Composable ((bottomPadding: Dp) -> Unit)? by mutableStateOf(null)
 
     init {
         filterQueue()
@@ -45,12 +47,12 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
     }
 
     @Composable
-    fun compose(modifier: Modifier = Modifier) {
+    fun compose(paddingValues: PaddingValues) {
         val correctNumber = remember { mutableStateOf(0) }
         val overallNumber = remember { mutableStateOf(0) }
         if (empty) {
             remember { bottomButton = null }
-            Box(modifier = modifier.fillMaxSize()) {
+            Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
                 Text("No questions found", Modifier.align(Alignment.Center), style = MaterialTheme.typography.bodyLarge)
             }
             return
@@ -95,9 +97,11 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
             }
         }
         remember(hack) {
-            Log.e("aaaaaaaaaaaaaaaaaa", "button set")
             bottomButton = {
-                Box(Modifier.padding(12.dp).padding(bottom = 24.dp).fillMaxWidth().defaultMinSize(minHeight = 48.dp)) {
+                Box(
+                    Modifier.padding(horizontal = 16.dp).padding(bottom = 4.dp + it).fillMaxWidth()
+                        .defaultMinSize(minHeight = 48.dp)
+                ) {
                     val buttonModifier = Modifier.fillMaxWidth().align(Alignment.Center)
                     if (!hasAnswered.value) {
                         Button(onClick = { submit() }, modifier = buttonModifier) {
@@ -111,7 +115,12 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                 }
             }
         }
-        LazyColumn(modifier = modifier) {
+        val coroutineScope = rememberCoroutineScope()
+        val scrollState = rememberLazyListState()
+        LazyColumn(state = scrollState) {
+            item {
+                Spacer(Modifier.padding(top = paddingValues.calculateTopPadding()))
+            }
             item {
                 Spacer(Modifier.height(16.dp))
                 Text(
@@ -162,7 +171,10 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                         contentScale = ContentScale.FillWidth
                     )
             }
-            question.compose(dataManager, this, questionState, submit, hasAnswered.value)
+            question.compose(dataManager, this, questionState, submit, hasAnswered.value, coroutineScope, scrollState)
+            item {
+                Spacer(Modifier.padding(bottom = paddingValues.calculateBottomPadding()))
+            }
         }
     }
 
@@ -271,6 +283,8 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
 
     @Composable
     fun bottomBar() {
-        bottomButton?.let { it() }
+        val contentOffsetBottom =
+            with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
+        bottomButton?.let { it(contentOffsetBottom) }
     }
 }

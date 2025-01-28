@@ -2,12 +2,14 @@ package oblitusnumen.quizzzlet.implementation.data.questions
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
 import oblitusnumen.quizzzlet.implementation.data.DataManager
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.CategoryQuestionJsonizer
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.QuestionJsonizer
@@ -37,7 +39,9 @@ class CategoryQuestion(
         scope: LazyListScope,
         questionState: QuestionState,
         submit: () -> Unit,
-        hasAnswered: Boolean
+        hasAnswered: Boolean,
+        coroutineScope: CoroutineScope,
+        scrollState: LazyListState
     ) {
         val candidates = (questionState as CategoryQuestionState).candidates
         val answers: List<MutableState<Int?>> = questionState.answers

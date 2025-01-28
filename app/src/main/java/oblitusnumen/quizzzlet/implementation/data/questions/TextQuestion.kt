@@ -2,6 +2,7 @@ package oblitusnumen.quizzzlet.implementation.data.questions
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +19,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
 import oblitusnumen.quizzzlet.implementation.data.DataManager
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.QuestionJsonizer
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.TextQuestionJsonizer
@@ -35,7 +37,9 @@ class TextQuestion(id: Int?, question: String, attachments: List<String>?, priva
         scope: LazyListScope,
         questionState: QuestionState,
         submit: () -> Unit,
-        hasAnswered: Boolean
+        hasAnswered: Boolean,
+        coroutineScope: CoroutineScope,
+        scrollState: LazyListState
     ) {
         val answer = (questionState as TextQuestionState).answer// FIXME: add multiple field support
         scope.item {

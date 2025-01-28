@@ -27,7 +27,8 @@ class MainActivity : ComponentActivity() {
                 val dataManager = remember { DataManager(this) }
                 val mainScreen = remember { MainScreen(dataManager) }
                 var qScreen: QScreen? by remember { mutableStateOf(null) }
-                Scaffold(modifier = Modifier.fillMaxSize(),
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
                     topBar = {
                         if (qScreen == null)
                             mainScreen.topBar()
@@ -38,14 +39,17 @@ class MainActivity : ComponentActivity() {
                         if (qScreen == null)
                             mainScreen.functionButton()
                     },
-                    bottomBar = { qScreen?.bottomBar() }) { innerPadding ->
+                    bottomBar = {
+                        qScreen?.bottomBar()
+                    }
+                ) { innerPadding ->
                     if (qScreen == null)
                         mainScreen.compose(Modifier.padding(innerPadding)) { qScreen = QScreen(dataManager, it) }
                     else {
                         BackHandler {
                             qScreen = null
                         }
-                        qScreen!!.compose(Modifier.padding(innerPadding))
+                        qScreen!!.compose(innerPadding)
                     }
                 }
             }
