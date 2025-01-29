@@ -15,7 +15,8 @@ class TextQuestionJsonizer : QuestionJsonizer<TextQuestion>() {
                 jsonObject.get("attachments").asJsonArray.map { it.asString }
             else
                 null,
-            jsonObject.get("answer").asString/*jsonObject.get("answer").asJsonArray.map { it.asInt }*/// FIXME: this can also be an array
+            jsonObject.get("answer").asString
+//            jsonObject.get("answer").asJsonArray.map { it.asInt }// TODO: this can also be an array add multiple field support
         )
     }
 }

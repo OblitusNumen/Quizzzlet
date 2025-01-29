@@ -41,7 +41,7 @@ class TextQuestion(id: Int?, question: String, attachments: List<String>?, priva
         coroutineScope: CoroutineScope,
         scrollState: LazyListState
     ) {
-        val answer = (questionState as TextQuestionState).answer// FIXME: add multiple field support
+        val answer = (questionState as TextQuestionState).answer
         scope.item {
             val focusRequester = remember { FocusRequester() }
             val modifier1 = Modifier//.weight(1f).align(Alignment.CenterVertically)

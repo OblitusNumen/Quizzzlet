@@ -24,6 +24,8 @@ import oblitusnumen.quizzzlet.implementation.data.DataManager
 import oblitusnumen.quizzzlet.implementation.data.PoolSetting
 import oblitusnumen.quizzzlet.implementation.data.QuestionPool
 import oblitusnumen.quizzzlet.implementation.data.questions.*
+import oblitusnumen.quizzzlet.implementation.fullscreenImageDialog
+import oblitusnumen.quizzzlet.implementation.screenWidthInDp
 import kotlin.math.min
 
 class QScreen(private val dataManager: DataManager, fileName: String) {
@@ -172,13 +174,19 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                         ) {
                             Text("attachment $attachment", Modifier.align(Alignment.Center))
                         }
-                    else
+                    else {
+                        var isFullscreen by remember { mutableStateOf(false) }
+                        if (isFullscreen) {
+                            fullscreenImageDialog(bitmap) { isFullscreen = false }
+                        }
                         Image(
                             bitmap,
                             "attachment $attachment",
-                            modifier = Modifier.padding(12.dp).fillMaxWidth(),// TODO: clickable open in fullscreen
+                            modifier = Modifier.padding(12.dp).defaultMinSize(minWidth = (screenWidthInDp() / 2).dp)
+                                .clickable { isFullscreen = true },
                             contentScale = ContentScale.FillWidth
                         )
+                    }
                 }
                 question.compose(
                     dataManager,
