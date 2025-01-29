@@ -21,8 +21,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import oblitusnumen.quizzzlet.implementation.data.DataManager
+import oblitusnumen.quizzzlet.implementation.data.PoolSetting
 import oblitusnumen.quizzzlet.implementation.data.QuestionPool
 import oblitusnumen.quizzzlet.implementation.data.questions.*
+import kotlin.math.min
 
 class QScreen(private val dataManager: DataManager, fileName: String) {
     private val questionPool: QuestionPool = dataManager.getQuestionPool(fileName)
@@ -44,7 +46,10 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                 is CategoryQuestion -> !dataManager.config.enableCategoryQs
                 is OrderQuestion -> !dataManager.config.enableOrderQs
                 else -> throw NotImplementedError()
-            } || !poolSetting.enabledPools()[questionPool.indexOf(it) / poolSetting.numberInPool]
+            } || !poolSetting.enabledPools()[min(
+                poolSetting.enabledPools().size - 1,
+                questionPool.indexOf(it) / PoolSetting.QUESTIONS_IN_POOL_BIT
+            )]
         }
         empty = questionQueue.isEmpty()
     }
@@ -210,7 +215,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                     questionPool.setPoolSetting(poolSetting)
                     if (empty) {
                         questionQueue.addAll(questionPool.questionsScrambled())
-                        filterQueue()// FIXME:
+                        filterQueue()
                     }
                 }) {
                     Text("OK")
@@ -223,11 +228,11 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                     }
                     items(poolSettingStates.size) { index ->
                         checkboxOption(
-                            poolSettingStates[index], "${index * poolSetting.numberInPool + 1} - ${
+                            poolSettingStates[index], "${index * PoolSetting.QUESTIONS_IN_POOL_BIT + 1} - ${
                                 if (index == poolSettingStates.size - 1)
                                     questionPool.countQuestions()
                                 else
-                                    (index + 1) * poolSetting.numberInPool
+                                    (index + 1) * PoolSetting.QUESTIONS_IN_POOL_BIT
                             }"
                         )
                     }
@@ -246,7 +251,6 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
         val enableTextQs = remember { mutableStateOf(config.enableTextQs) }
         val enableCategoryQs = remember { mutableStateOf(config.enableCategoryQs) }
         val enableOrderQs = remember { mutableStateOf(config.enableOrderQs) }
-        // TODO: checkboxes for q's 1-10, 11-20: save settings by pool
         AlertDialog(
             onDismissRequest = onClose,
             dismissButton = {

@@ -1,12 +1,7 @@
 package oblitusnumen.quizzzlet.implementation.data
 
-import kotlin.math.max
-
-class PoolSetting private constructor(val numberInPool: Int, private val enabledPools: MutableList<Boolean>) {
-    constructor(string: String) : this(
-        string.substring(0, string.indexOf(',')).toInt(),
-        mutableListOf(*string.substring(string.indexOf(',') + 1).toCharArray().map { it == '1' }.toTypedArray())
-    )
+class PoolSetting private constructor(private val enabledPools: MutableList<Boolean>) {
+    constructor(string: String) : this(mutableListOf(*string.toCharArray().map { it == '1' }.toTypedArray()))
 
     fun enabledPools(): List<Boolean> = enabledPools
 
@@ -18,17 +13,21 @@ class PoolSetting private constructor(val numberInPool: Int, private val enabled
     }
 
     override fun toString(): String {
-        return "$numberInPool," + enabledPools.joinToString("") { if (it) "1" else "0" }
+        return enabledPools.joinToString("") { if (it) "1" else "0" }
     }
 
     companion object {
+        const val QUESTIONS_IN_POOL_BIT = 15
+
         fun ofPool(questionPool: QuestionPool): PoolSetting {
             if (questionPool.countQuestions() == 0)
-                return PoolSetting(0, mutableListOf())
-            val numberOfTens = max(questionPool.countQuestions() / 10, 1)
-            val numberInPool: Int = (questionPool.countQuestions() + numberOfTens - 1) / numberOfTens
-            val numberOfPools = (questionPool.countQuestions() + numberInPool - 1) / numberInPool
-            return PoolSetting(numberInPool, mutableListOf(*(1..numberOfPools).map { true }.toTypedArray()))
+                return PoolSetting(mutableListOf())
+            if (questionPool.countQuestions() <= QUESTIONS_IN_POOL_BIT)
+                return PoolSetting(mutableListOf(true))
+            var numberOfPools = questionPool.countQuestions() / QUESTIONS_IN_POOL_BIT
+            if (questionPool.countQuestions() % QUESTIONS_IN_POOL_BIT > QUESTIONS_IN_POOL_BIT / 2)
+                numberOfPools++
+            return PoolSetting(mutableListOf(*(1..numberOfPools).map { true }.toTypedArray()))
         }
     }
 }

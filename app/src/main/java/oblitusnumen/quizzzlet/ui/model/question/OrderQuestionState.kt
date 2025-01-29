@@ -31,7 +31,7 @@ class OrderQuestionState(question: OrderQuestion) : QuestionState(question) {
     fun resetSlide() {
         slideStates.clear()
         slideStates.putAll(order.map { it to SlideState.NONE }.toTypedArray())
-    } // FIXME: concurrent
+    }
 
     enum class SlideState {
         NONE,
