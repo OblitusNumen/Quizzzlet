@@ -8,6 +8,7 @@ import oblitusnumen.quizzzlet.implementation.extractZip
 import oblitusnumen.quizzzlet.implementation.inputStreamFromZip
 import java.io.File
 import java.io.IOException
+import java.io.PrintWriter
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
@@ -80,9 +81,30 @@ class DataManager(val context: Context) {
 
     fun getPoolDir(poolDir: String) = File(poolsDir, poolDir)
 
+    fun getPoolSetting(poolDir: String): PoolSetting? {
+        val poolSettingFile = getPoolSettingFile(poolDir)
+        if (!poolSettingFile.exists()) return null
+        val contents = poolSettingFile.readText()
+        if (contents.isEmpty()) return null
+        return PoolSetting(contents)
+    }
+
+    fun setPoolSetting(poolDir: String, poolSetting: String) {
+        getPoolSettingFile(poolDir).outputStream().use { os ->
+            PrintWriter(os).use { writer ->
+                writer.write(poolSetting)
+                os.flush()
+                os.fd.sync()
+            }
+        }
+    }
+
+    private fun getPoolSettingFile(poolDir: String) = File(getPoolDir(poolDir), POOL_SETTING_FILENAME)
+
     companion object {
         private const val QUESTION_POOL_DIRECTORY: String = "question-pools"
         private const val POOL_FILENAME: String = "questions.json"
+        private const val POOL_SETTING_FILENAME: String = "pool-setting"
         private const val POOL_NAME_FILENAME: String = "pool-name"
         private const val SHARED_PREFERENCES_NAME: String = "quizzzlet_preferences"
         private const val CONFIG_PREF_NAME: String = "config"

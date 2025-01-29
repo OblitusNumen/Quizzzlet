@@ -44,7 +44,7 @@ class QuestionPool {
         return asImageBitmap
     }
 
-    fun countQs(): Int {
+    fun countQuestions(): Int {
         return questions.size
     }
 
@@ -53,6 +53,12 @@ class QuestionPool {
     fun delete() {
         dataManager.getPoolDir(poolDir).deleteRecursively()
     }
+
+    fun getPoolSetting() = dataManager.getPoolSetting(poolDir) ?: PoolSetting.ofPool(this)
+
+    fun setPoolSetting(poolSetting: PoolSetting) = dataManager.setPoolSetting(poolDir, poolSetting.toString())
+
+    fun indexOf(question: Question) = questions.indexOf(question)
 
     companion object {
         private val gson: Gson

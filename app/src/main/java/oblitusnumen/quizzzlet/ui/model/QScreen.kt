@@ -6,8 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,6 +35,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
     }
 
     private fun filterQueue() {
+        val poolSetting = questionPool.getPoolSetting()
         questionQueue.removeIf {
             when (it) {
                 is TextQuestion -> !dataManager.config.enableTextQs
@@ -41,7 +44,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                 is CategoryQuestion -> !dataManager.config.enableCategoryQs
                 is OrderQuestion -> !dataManager.config.enableOrderQs
                 else -> throw NotImplementedError()
-            }
+            } || !poolSetting.enabledPools()[questionPool.indexOf(it) / poolSetting.numberInPool]
         }
         empty = questionQueue.isEmpty()
     }
@@ -179,6 +182,51 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
     }
 
     @Composable
+    fun showPoolDialog(onClose: () -> Unit) {
+        val poolSetting = remember { questionPool.getPoolSetting() }
+        val poolSettingStates: List<MutableState<Boolean>> =
+            remember { poolSetting.enabledPools().map { mutableStateOf(it) } }
+        AlertDialog(
+            onDismissRequest = onClose,
+            dismissButton = {
+                TextButton(onClick = onClose) {
+                    Text("Cancel")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onClose()
+                    poolSetting.update(poolSettingStates.map { it.value })
+                    questionPool.setPoolSetting(poolSetting)
+                    if (empty) {
+                        questionQueue.addAll(questionPool.questionsScrambled())
+                        filterQueue()// FIXME:
+                    }
+                }) {
+                    Text("OK")
+                }
+            },
+            text = {
+                LazyColumn {
+                    item {
+                        Text("Enabled questions:", Modifier.padding(8.dp))
+                    }
+                    items(poolSettingStates.size) { index ->
+                        checkboxOption(
+                            poolSettingStates[index], "${index * poolSetting.numberInPool + 1} - ${
+                                if (index == poolSettingStates.size - 1)
+                                    questionPool.countQuestions()
+                                else
+                                    (index + 1) * poolSetting.numberInPool
+                            }"
+                        )
+                    }
+                }
+            }
+        )
+    }
+
+    @Composable
     fun showSettingsDialog(onClose: () -> Unit) {
         val config = dataManager.config
         val repeatNotCorrect = remember { mutableStateOf(config.repeatNotCorrect) }
@@ -234,7 +282,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
     @Composable
     fun checkboxOption(checked: MutableState<Boolean>, label: String) {
         Row(
-            Modifier.fillMaxWidth().defaultMinSize(minHeight = 80.dp).padding(8.dp).clickable {
+            Modifier.fillMaxWidth().padding(2.dp).clickable {
                 checked.value = !checked.value
             },
             horizontalArrangement = Arrangement.Start
@@ -242,9 +290,9 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
             Checkbox(
                 checked = checked.value,
                 onCheckedChange = { checked.value = it },
-                modifier = Modifier.padding(8.dp).align(Alignment.CenterVertically)
+                modifier = Modifier.align(Alignment.CenterVertically)
             )
-            Text(label, modifier = Modifier.padding(8.dp).align(Alignment.CenterVertically))
+            Text(label, modifier = Modifier.align(Alignment.CenterVertically))
         }
     }
 
@@ -252,6 +300,7 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
     @Composable
     fun topBar(backPress: () -> Unit) {
         var settingsDialogShown by remember { mutableStateOf(false) }
+        var poolDialogShown by remember { mutableStateOf(false) }
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
         CenterAlignedTopAppBar(
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -269,6 +318,12 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
             },
             scrollBehavior = scrollBehavior,
             actions = {
+                IconButton(onClick = { poolDialogShown = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.Menu,
+                        contentDescription = null
+                    )
+                }
                 IconButton(onClick = { settingsDialogShown = true }) {
                     Icon(
                         imageVector = Icons.Filled.Settings,
@@ -277,6 +332,8 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                 }
             }
         )
+        if (poolDialogShown)
+            showPoolDialog { poolDialogShown = false }
         if (settingsDialogShown)
             showSettingsDialog { settingsDialogShown = false }
     }

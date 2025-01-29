@@ -79,7 +79,7 @@ class MainScreen(private val dataManager: DataManager) {
             )
             Text(
                 modifier = Modifier.align(Alignment.CenterVertically).padding(start = 8.dp, end = 8.dp),
-                text = "${questionPool.countQs()} questions",
+                text = "${questionPool.countQuestions()} questions",
                 style = MaterialTheme.typography.bodyLarge,
             )
         }
