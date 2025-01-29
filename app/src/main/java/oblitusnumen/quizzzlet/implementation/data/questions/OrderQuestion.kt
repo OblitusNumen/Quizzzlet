@@ -10,10 +10,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +32,8 @@ import oblitusnumen.quizzzlet.implementation.data.jsonizer.OrderQuestionJsonizer
 import oblitusnumen.quizzzlet.implementation.data.jsonizer.QuestionJsonizer
 import oblitusnumen.quizzzlet.implementation.dragToReorder
 import oblitusnumen.quizzzlet.implementation.modifyConditionally
+import oblitusnumen.quizzzlet.implementation.reorderable
+import oblitusnumen.quizzzlet.ui.model.AnimatableOffset
 import oblitusnumen.quizzzlet.ui.model.question.OrderQuestionState
 import oblitusnumen.quizzzlet.ui.model.question.QuestionState
 
@@ -116,17 +117,10 @@ class OrderQuestion(id: Int?, question: String, attachments: List<String>?, val 
         with(LocalDensity.current) {
             paddingInPixels = verticalPadding.times(2).toPx().toInt()
         }
+        val animatableOffset = remember { AnimatableOffset() }
         Row(Modifier.defaultMinSize(minHeight = 64.dp).fillMaxWidth()
             .padding(vertical = verticalPadding, horizontal = 8.dp)
-            .modifyConditionally(!hasAnswered) {
-                it.dragToReorder(
-                    element,
-                    elementIndex,
-                    questionState,
-                    scrollState,
-                    absoluteYLocation
-                )
-            }
+            .reorderable(animatableOffset)
             .scale(scale)
             .offset { IntOffset(0, verticalTranslation) }
             .border(2.dp, Color.Gray, shape = RoundedCornerShape(4.dp))
@@ -136,12 +130,20 @@ class OrderQuestion(id: Int?, question: String, attachments: List<String>?, val 
             .onGloballyPositioned {
                 absoluteYLocation.value = it.positionInWindow().y
                 questionState.onMeasured(element, it.size.height + paddingInPixels)
-            }
-        ) {
+            }) {
             Text(
                 modifier = Modifier.weight(1.0f).padding(8.dp).align(Alignment.CenterVertically),
                 text = element,
                 style = MaterialTheme.typography.bodyLarge
+            )
+            Icon(
+                Icons.Filled.Menu,
+                "Move element",
+                Modifier.padding(8.dp).align(Alignment.CenterVertically).modifyConditionally(!hasAnswered) {
+                    it.dragToReorder(
+                        animatableOffset, element, elementIndex, questionState, scrollState, absoluteYLocation
+                    )
+                }
             )
         }
     }

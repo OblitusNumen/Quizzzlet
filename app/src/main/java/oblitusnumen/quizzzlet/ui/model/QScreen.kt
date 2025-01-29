@@ -120,63 +120,73 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
         }
         val coroutineScope = rememberCoroutineScope()
         val scrollState = rememberLazyListState()
-        LazyColumn(state = scrollState) {
-            item {
-                Spacer(Modifier.padding(top = paddingValues.calculateTopPadding()))
-            }
-            item {
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    "Answered: ${overallNumber.value}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                )
-                Text(
-                    "Correct: ${correctNumber.value}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                )
-                Text(
-                    "Correct percentage: ${if (overallNumber.value == 0) "N/A" else "${100f * correctNumber.value / overallNumber.value}%"}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                if (question.id != null)
+        SelectionContainer {
+            LazyColumn(state = scrollState) {
+                item {
+                    Spacer(Modifier.padding(top = paddingValues.calculateTopPadding()))
+                }
+                item {
+                    Spacer(Modifier.height(16.dp))
                     Text(
-                        "id: ${question.id}",
+                        "Answered: ${overallNumber.value}",
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
-                Spacer(Modifier.height(8.dp))
-                HorizontalDivider()
-                Text(
-                    question.question,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(12.dp)
-                )
-            }
-            items(attachments.size) { index ->
-                val attachment = attachments[index]
-                val bitmap = questionPool.getAttachment(attachment)
-                if (bitmap == null)
-                    Box(
-                        Modifier.padding(12.dp).fillMaxWidth().defaultMinSize(minHeight = 48.dp)
-                            .border(2.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .5f))
-                    ) {
-                        Text("attachment $attachment", Modifier.align(Alignment.Center))
-                    }
-                else
-                    Image(
-                        bitmap,
-                        "attachment $attachment",
-                        modifier = Modifier.padding(12.dp).fillMaxWidth(),// TODO: clickable open in fullscreen
-                        contentScale = ContentScale.FillWidth
+                    Text(
+                        "Correct: ${correctNumber.value}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
-            }
-            question.compose(dataManager, this, questionState, submit, hasAnswered.value, coroutineScope, scrollState)
-            item {
-                Spacer(Modifier.padding(bottom = paddingValues.calculateBottomPadding()))
+                    Text(
+                        "Correct percentage: ${if (overallNumber.value == 0) "N/A" else "${100f * correctNumber.value / overallNumber.value}%"}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (question.id != null)
+                        Text(
+                            "id: ${question.id}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    Spacer(Modifier.height(8.dp))
+                    HorizontalDivider()
+                    Text(
+                        question.question,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+                items(attachments.size) { index ->
+                    val attachment = attachments[index]
+                    val bitmap = questionPool.getAttachment(attachment)
+                    if (bitmap == null)
+                        Box(
+                            Modifier.padding(12.dp).fillMaxWidth().defaultMinSize(minHeight = 48.dp)
+                                .border(2.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .5f))
+                        ) {
+                            Text("attachment $attachment", Modifier.align(Alignment.Center))
+                        }
+                    else
+                        Image(
+                            bitmap,
+                            "attachment $attachment",
+                            modifier = Modifier.padding(12.dp).fillMaxWidth(),// TODO: clickable open in fullscreen
+                            contentScale = ContentScale.FillWidth
+                        )
+                }
+                question.compose(
+                    dataManager,
+                    this,
+                    questionState,
+                    submit,
+                    hasAnswered.value,
+                    coroutineScope,
+                    scrollState
+                )
+                item {
+                    Spacer(Modifier.padding(bottom = paddingValues.calculateBottomPadding()))
+                }
             }
         }
     }

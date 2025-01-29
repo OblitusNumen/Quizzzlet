@@ -1,7 +1,6 @@
 package oblitusnumen.quizzzlet.implementation
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
@@ -21,6 +20,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import oblitusnumen.quizzzlet.ui.model.AnimatableOffset
 import oblitusnumen.quizzzlet.ui.model.question.OrderQuestionState
 import java.io.File
 import java.io.InputStream
@@ -96,6 +96,7 @@ fun Modifier.modifyConditionally(condition: Boolean, modifier: (Modifier) -> Mod
 }
 
 fun Modifier.dragToReorder(
+    animatableOffset: AnimatableOffset,
     element: String,
     elementIndex: Int,
     questionState: OrderQuestionState,
@@ -145,8 +146,8 @@ fun Modifier.dragToReorder(
         questionState.resetSlide()
     }
     val onStartDrag: () -> Unit = { questionState.draggedItemIndex.value = elementIndex }
-    val offsetX = remember { Animatable(0f) }
-    val offsetY = remember { Animatable(0f) }
+    val offsetX = remember { animatableOffset.offsetX }
+    val offsetY = remember { animatableOffset.offsetY }
     pointerInput(Unit) {
         // Wrap in a coroutine scope to use suspend functions for touch events and animation.
         coroutineScope {
@@ -205,7 +206,7 @@ fun Modifier.dragToReorder(
                     onStopDrag(elementIndex + listOffset)
                 }
             }
-            detectDragGesturesAfterLongPress(
+            detectDragGestures(
                 onDragStart = {
                     if (questionState.draggedItemIndex.value == null)
                         onDragStart()
@@ -231,7 +232,15 @@ fun Modifier.dragToReorder(
                 }
             )
         }
-    }.offset {
+    }
+}
+
+fun Modifier.reorderable(
+    animatableOffset: AnimatableOffset
+): Modifier = composed {
+    val offsetX = remember { animatableOffset.offsetX }
+    val offsetY = remember { animatableOffset.offsetY }
+    offset {
         // Use the animating offset value here.
         IntOffset(offsetX.value.roundToInt(), offsetY.value.roundToInt())
     }
