@@ -1,14 +1,21 @@
 package oblitusnumen.quizzzlet.implementation
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
@@ -32,9 +39,12 @@ import oblitusnumen.quizzzlet.ui.model.AnimatableOffset
 import oblitusnumen.quizzzlet.ui.model.question.OrderQuestionState
 import java.io.File
 import java.io.InputStream
+import java.lang.Float.min
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import kotlin.math.absoluteValue
+import kotlin.math.max
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 fun String.equalsStripIgnoreCase(other: String) = this.lowercase().trim() == other.lowercase().trim()
@@ -96,31 +106,105 @@ fun fullscreenImageDialog(bitmap: ImageBitmap, onDismiss: () -> Unit) {
 
 @Composable
 fun zoomableImage(bitmap: ImageBitmap, onDismiss: () -> Unit) {
-    var scale by remember { mutableStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
+    val screenWidthInPixels = screenWidthInPixels()
+    val screenHeightInPixels = screenHeightInPixels()
+    val imgWidth = remember { bitmap.width }
+    val imgHeight = remember { bitmap.height }
+    val width = remember { min(imgWidth.toFloat(), screenWidthInPixels.toFloat()) }
+    val height = remember { min(width / imgWidth * imgHeight, screenHeightInPixels.toFloat()) }
+    val maxScale = remember {
+        max(min(screenWidthInPixels.toFloat() / imgWidth, screenHeightInPixels.toFloat() / imgHeight), 5f)
+    }
+    val doubleTapScaleFactor = remember { maxScale.pow(.5f) }
+    val inertiaAmount = remember { 50f }
+    val scale = remember { Animatable(1f) }
+    val offset = remember { AnimatableOffset() }
+    val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 5f)
-                    offset = Offset(offset.x + pan.x, offset.y + pan.y)
+                    val maxOffsetX =
+                        if (width * scale.targetValue <= screenWidthInPixels.toFloat())
+                            0f
+                        else
+                            (width * scale.targetValue - screenWidthInPixels) / 2f
+                    val maxOffsetY =
+                        if (height * scale.targetValue <= screenHeightInPixels.toFloat())
+                            0f
+                        else
+                            (height * scale.targetValue - screenHeightInPixels) / 2f
+                    coroutineScope.launch {
+                        scale.snapTo((scale.value * zoom/*.pow(2f)*/).coerceIn(1f, maxScale))
+                    }
+                    coroutineScope.launch {
+                        offset.offsetX.stop()
+                        offset.offsetX.snapTo(
+                            (offset.offsetX.value + pan.x/* * scale.targetValue*/).coerceIn(
+                                -maxOffsetX,
+                                maxOffsetX
+                            )
+                        )
+                        if (zoom == 1f)
+                            offset.offsetX.animateTo(
+                                (offset.offsetX.value + pan.x * inertiaAmount/* * scale.targetValue*/).coerceIn(
+                                    -maxOffsetX,
+                                    maxOffsetX
+                                ), tween(1000, easing = EaseOut)
+                            )
+                    }
+                    coroutineScope.launch {
+                        offset.offsetY.stop()
+                        offset.offsetY.snapTo(
+                            (offset.offsetY.value + pan.y/* * scale.targetValue*/).coerceIn(
+                                -maxOffsetY,
+                                maxOffsetY
+                            )
+                        )
+                        if (zoom == 1f)
+                            offset.offsetY.animateTo(
+                                (offset.offsetY.value + pan.y * inertiaAmount/* * scale.targetValue*/).coerceIn(
+                                    -maxOffsetY,
+                                    maxOffsetY
+                                ), tween(1000, easing = EaseOut)
+                            )
+                    }
                 }
             }
-            .clickable(onClick = onDismiss)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        // Reset zoom and pan on double tap
+                        if (scale.value < maxScale) {
+                            coroutineScope.launch {
+                                scale.animateTo(min(maxScale, scale.value * doubleTapScaleFactor), tween(500))
+                            }
+                        } else {
+                            coroutineScope.launch {
+                                scale.animateTo(1f, tween(500))
+                                offset.offsetX.snapTo(0f)
+                                offset.offsetY.snapTo(0f)
+                            }
+                        }
+                    },
+                    onTap = { onDismiss() }
+                )
+            }
     ) {
         Image(
             bitmap = bitmap,
             contentDescription = "Fullscreen Image",
             contentScale = ContentScale.Fit, // Adjust image scale behavior
             modifier = Modifier
-                .fillMaxSize() // Forces image to take up the full width & height
+                .align(Alignment.Center)
+//                .fillMaxSize() // Forces image to take up the full width & height
                 .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
+                    scaleX = scale.value,
+                    scaleY = scale.value,
+                    translationX = offset.offsetX.value,
+                    translationY = offset.offsetY.value
                 )
         )
     }
@@ -128,6 +212,15 @@ fun zoomableImage(bitmap: ImageBitmap, onDismiss: () -> Unit) {
 
 @Composable
 fun screenWidthInDp(): Int = LocalConfiguration.current.screenWidthDp
+
+@Composable
+fun screenWidthInPixels(): Int {
+    val configuration = LocalConfiguration.current
+    val screenWidthDp = configuration.screenWidthDp
+    val density = LocalDensity.current.density
+
+    return (screenWidthDp * density).toInt()
+}
 
 @Composable
 fun screenHeightInPixels(): Int {
