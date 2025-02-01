@@ -1,6 +1,5 @@
 package oblitusnumen.quizzzlet.ui.model
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Dp
@@ -24,8 +22,7 @@ import oblitusnumen.quizzzlet.implementation.data.DataManager
 import oblitusnumen.quizzzlet.implementation.data.PoolSetting
 import oblitusnumen.quizzzlet.implementation.data.QuestionPool
 import oblitusnumen.quizzzlet.implementation.data.questions.*
-import oblitusnumen.quizzzlet.implementation.fullscreenImageDialog
-import oblitusnumen.quizzzlet.implementation.screenWidthInDp
+import oblitusnumen.quizzzlet.implementation.imagePreview
 import kotlin.math.min
 
 class QScreen(private val dataManager: DataManager, fileName: String) {
@@ -174,19 +171,8 @@ class QScreen(private val dataManager: DataManager, fileName: String) {
                         ) {
                             Text("attachment $attachment", Modifier.align(Alignment.Center))
                         }
-                    else {
-                        var isFullscreen by remember { mutableStateOf(false) }
-                        if (isFullscreen) {
-                            fullscreenImageDialog(bitmap) { isFullscreen = false }
-                        }
-                        Image(
-                            bitmap,
-                            "attachment $attachment",
-                            modifier = Modifier.padding(12.dp).defaultMinSize(minWidth = (screenWidthInDp() / 2).dp)
-                                .clickable { isFullscreen = true },
-                            contentScale = ContentScale.FillWidth
-                        )
-                    }
+                    else
+                        imagePreview(bitmap, "attachment $attachment")
                 }
                 question.compose(
                     dataManager,

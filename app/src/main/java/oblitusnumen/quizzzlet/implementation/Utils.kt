@@ -4,17 +4,13 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -31,6 +27,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.coroutineScope
@@ -98,6 +96,21 @@ fun extractZip(zipInputStream: InputStream, filePaths: Collection<String>, outpu
 }
 
 @Composable
+fun imagePreview(bitmap: ImageBitmap, imgName: String) {
+    var isFullscreen by remember { mutableStateOf(false) }
+    if (isFullscreen) {
+        fullscreenImageDialog(bitmap) { isFullscreen = false }
+    }
+    Image(
+        bitmap,
+        imgName,
+        modifier = Modifier.padding(12.dp).defaultMinSize(minWidth = (screenWidthInDp() / 2).dp)
+            .clickable { isFullscreen = true },
+        contentScale = ContentScale.FillWidth
+    )
+}
+
+@Composable
 fun fullscreenImageDialog(bitmap: ImageBitmap, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = { onDismiss() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         zoomableImage(bitmap, onDismiss)
@@ -106,16 +119,18 @@ fun fullscreenImageDialog(bitmap: ImageBitmap, onDismiss: () -> Unit) {
 
 @Composable
 fun zoomableImage(bitmap: ImageBitmap, onDismiss: () -> Unit) {
-    val screenWidthInPixels = screenWidthInPixels()
-    val screenHeightInPixels = screenHeightInPixels()
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val size = IntSize(
+        with(density) { configuration.screenWidthDp.dp.toPx() }.toInt(),
+        with(density) { configuration.screenHeightDp.dp.toPx() }.toInt()
+    )
     val imgWidth = remember { bitmap.width }
     val imgHeight = remember { bitmap.height }
-    val width = remember { min(imgWidth.toFloat(), screenWidthInPixels.toFloat()) }
-    val height = remember { min(width / imgWidth * imgHeight, screenHeightInPixels.toFloat()) }
-    val maxScale = remember {
-        max(min(screenWidthInPixels.toFloat() / imgWidth, screenHeightInPixels.toFloat() / imgHeight), 5f)
-    }
-    val doubleTapScaleFactor = remember { maxScale.pow(.5f) }
+    val width = min(imgWidth.toFloat(), size.width.toFloat())
+    val height = min(width / imgWidth * imgHeight, size.height.toFloat())
+    val maxScale = max(min(size.width.toFloat() / imgWidth, size.height.toFloat() / imgHeight), 5f)
+    val doubleTapScaleFactor = maxScale.pow(.5f)
     val inertiaAmount = remember { 50f }
     val scale = remember { Animatable(1f) }
     val offset = remember { AnimatableOffset() }
@@ -127,15 +142,15 @@ fun zoomableImage(bitmap: ImageBitmap, onDismiss: () -> Unit) {
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     val maxOffsetX =
-                        if (width * scale.targetValue <= screenWidthInPixels.toFloat())
+                        if (width * scale.targetValue <= size.width.toFloat())
                             0f
                         else
-                            (width * scale.targetValue - screenWidthInPixels) / 2f
+                            (width * scale.targetValue - size.width) / 2f
                     val maxOffsetY =
-                        if (height * scale.targetValue <= screenHeightInPixels.toFloat())
+                        if (height * scale.targetValue <= size.height.toFloat())
                             0f
                         else
-                            (height * scale.targetValue - screenHeightInPixels) / 2f
+                            (height * scale.targetValue - size.height) / 2f
                     coroutineScope.launch {
                         scale.snapTo((scale.value * zoom/*.pow(2f)*/).coerceIn(1f, maxScale))
                     }
@@ -184,8 +199,12 @@ fun zoomableImage(bitmap: ImageBitmap, onDismiss: () -> Unit) {
                         } else {
                             coroutineScope.launch {
                                 scale.animateTo(1f, tween(500))
-                                offset.offsetX.snapTo(0f)
-                                offset.offsetY.snapTo(0f)
+                            }
+                            coroutineScope.launch {
+                                offset.offsetX.animateTo(0f, tween(500))
+                            }
+                            coroutineScope.launch {
+                                offset.offsetY.animateTo(0f, tween(500))
                             }
                         }
                     },
@@ -212,24 +231,6 @@ fun zoomableImage(bitmap: ImageBitmap, onDismiss: () -> Unit) {
 
 @Composable
 fun screenWidthInDp(): Int = LocalConfiguration.current.screenWidthDp
-
-@Composable
-fun screenWidthInPixels(): Int {
-    val configuration = LocalConfiguration.current
-    val screenWidthDp = configuration.screenWidthDp
-    val density = LocalDensity.current.density
-
-    return (screenWidthDp * density).toInt()
-}
-
-@Composable
-fun screenHeightInPixels(): Int {
-    val configuration = LocalConfiguration.current
-    val screenHeightDp = configuration.screenHeightDp
-    val density = LocalDensity.current.density
-
-    return (screenHeightDp * density).toInt()
-}
 
 fun Modifier.modifyConditionally(condition: Boolean, modifier: (Modifier) -> Modifier): Modifier {
     return if (condition)
